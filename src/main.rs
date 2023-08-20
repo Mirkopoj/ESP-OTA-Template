@@ -58,7 +58,7 @@ fn main() -> Result<()> {
     )?;
 
     let update = check_update(
-        "https://raw.githubusercontent.com/Mirkopoj/ESP-OTA_tests/master/update.json",
+        "https://raw.githubusercontent.com/Mirkopoj/ESP-OTA-Template/master/update.json",
     )?;
 
     println!("{:?}", update);
