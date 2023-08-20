@@ -86,6 +86,8 @@ fn ota() -> Result<()> {
         let update = check_update(
             "https://raw.githubusercontent.com/Mirkopoj/ESP-OTA-Template/master/update.json",
         )?;
+        println!("Version actual: {}", version);
+        println!("Version leida: {}", update.version);
         if update.version > version {
             break;
         }
