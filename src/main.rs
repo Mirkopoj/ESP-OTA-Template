@@ -1,11 +1,15 @@
-use anyhow::{bail, Result};
+use anyhow::{bail, Ok, Result};
 use core::str;
 use embedded_svc::{http::client::Client, io::Read};
 use esp_idf_hal::prelude::Peripherals;
+use esp_idf_hal::delay;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     http::client::{Configuration, EspHttpConnection},
 };
+
+use std::thread;
+
 mod wifi;
 use wifi::wifi;
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported
@@ -14,6 +18,10 @@ use esp_idf_sys as _;
 use serde::{Deserialize, Serialize};
 
 use semver::Version;
+
+use crate::run::run;
+
+mod run;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct UpdateJson {
@@ -58,14 +66,34 @@ fn main() -> Result<()> {
         sysloop,
     )?;
 
+    let run_thread = thread::spawn(move || run());
+
+    let ota_thread = thread::spawn(move || ota());
+
+    let _ = run_thread.join();
+    let _ = ota_thread.join();
+
+    Ok(())
+}
+
+fn ota() -> Result<()> {
     let update = check_update(
         "https://raw.githubusercontent.com/Mirkopoj/ESP-OTA-Template/master/update.json",
     )?;
 
-    println!("{:?}", update);
-    println!("{}", update.version);
-    let cero = Version::parse("0.0.0").unwrap();
-    println!("{}", update.version > cero);
+    let version = update.version;
+
+    loop {
+        let update = check_update(
+            "https://raw.githubusercontent.com/Mirkopoj/ESP-OTA-Template/master/update.json",
+        )?;
+        if update.version > version {
+            break;
+        }
+        delay::Delay::delay_ms(30000);
+    }
+
+    println!("VERSION NUEVAAAAAAA!!!!!!");
 
     Ok(())
 }
@@ -82,7 +110,6 @@ fn connect() -> Result<Client<EspHttpConnection>> {
 }
 
 fn check_update(url: impl AsRef<str>) -> Result<Update> {
-
     let mut client = connect()?;
     let request = client.get(url.as_ref())?;
     let response = request.submit()?;
