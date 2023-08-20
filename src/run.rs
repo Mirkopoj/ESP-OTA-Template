@@ -1,5 +1,5 @@
 use anyhow::Result;
-use esp_idf_hal::delay;
+use std::{thread, time::Duration};
 use esp_idf_sys::{
     esp, gpio_config, gpio_config_t, gpio_int_type_t_GPIO_INTR_DISABLE,
     gpio_mode_t_GPIO_MODE_OUTPUT, gpio_set_level,
@@ -26,6 +26,6 @@ pub fn run() -> Result<()> {
             esp!(gpio_set_level(GPIO_NUM, led.into()))?;
         }
         led ^= true;
-        delay::Delay::delay_ms(1000);
+        thread::sleep(Duration::from_millis(1000));
     }
 }

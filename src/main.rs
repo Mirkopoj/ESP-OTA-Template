@@ -2,13 +2,12 @@ use anyhow::{bail, Ok, Result};
 use core::str;
 use embedded_svc::{http::client::Client, io::Read};
 use esp_idf_hal::prelude::Peripherals;
-use esp_idf_hal::delay;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     http::client::{Configuration, EspHttpConnection},
 };
 
-use std::thread;
+use std::{thread, time::Duration};
 
 mod wifi;
 use wifi::wifi;
@@ -68,10 +67,9 @@ fn main() -> Result<()> {
 
     let run_thread = thread::spawn(move || run());
 
-    let ota_thread = thread::spawn(move || ota());
+    ota()?;
 
     let _ = run_thread.join();
-    let _ = ota_thread.join();
 
     Ok(())
 }
@@ -84,13 +82,13 @@ fn ota() -> Result<()> {
     let version = update.version;
 
     loop {
+        thread::sleep(Duration::from_secs(30));
         let update = check_update(
             "https://raw.githubusercontent.com/Mirkopoj/ESP-OTA-Template/master/update.json",
         )?;
         if update.version > version {
             break;
         }
-        delay::Delay::delay_ms(30000);
     }
 
     println!("VERSION NUEVAAAAAAA!!!!!!");
