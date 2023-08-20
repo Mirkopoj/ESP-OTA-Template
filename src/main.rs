@@ -6,6 +6,7 @@ use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     http::client::{Configuration, EspHttpConnection},
 };
+mod wifi;
 use wifi::wifi;
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported
 use esp_idf_sys as _;
