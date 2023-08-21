@@ -25,17 +25,20 @@ mod run;
 #[derive(Serialize, Deserialize, Debug)]
 struct UpdateJson {
     version: String,
+    link: String,
 }
 
 #[derive(Debug)]
 struct Update {
     version: Version,
+    link: String,
 }
 
 impl Update {
     pub fn new(json: UpdateJson) -> Update {
         let version = Version::parse(&json.version).unwrap();
-        Update { version }
+        let link = json.link;
+        Update { version, link }
     }
 }
 
@@ -93,7 +96,7 @@ fn ota() -> Result<()> {
         }
     }
 
-    println!("VERSION NUEVAAAAAAA!!!!!!");
+    ota_update(update.link)?;
 
     Ok(())
 }
@@ -131,4 +134,35 @@ fn check_update(url: impl AsRef<str>) -> Result<Update> {
     }
 
     Ok(update)
+}
+
+fn ota_update(url: impl AsRef<str>) -> Result<()> {
+
+    let mut client = connect()?;
+    let request = client.get(url.as_ref())?;
+    let response = request.submit()?;
+    let status = response.status();
+    let mut ota = esp_ota::OtaUpdate::begin()?;
+
+    match status {
+        200..=299 => {
+            let mut buf = [0_u8; 4096];
+            let mut reader = response;
+            loop {
+                let size = Read::read(&mut reader, &mut buf)?;
+                if size == 0 {
+                    break;
+                }
+                ota.write(&buf)?;
+            }
+        }
+
+        _ => bail!("Unexpected response code: {}", status),
+    }
+
+    let mut completed_ota = ota.finalize()?;
+    completed_ota.set_as_boot_partition()?;
+    completed_ota.restart();
+
+    Ok(())
 }
