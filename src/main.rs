@@ -148,10 +148,11 @@ fn ota_update(url: impl AsRef<str>) -> Result<()> {
 
     match status {
         200..=299 => {
-            let mut buf = Vec::new();
+            let mut buf = [0_u8; 256];
             let mut reader = response;
             loop {
                 let size = Read::read(&mut reader, &mut buf)?;
+                info!("Read {} bytes", size);
                 if size == 0 {
                     break;
                 }
