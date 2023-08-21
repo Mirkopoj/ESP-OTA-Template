@@ -7,6 +7,7 @@ use esp_idf_svc::{
     http::client::{Configuration, EspHttpConnection},
 };
 
+use log::info;
 use std::{thread, time::Duration};
 
 mod wifi;
@@ -137,12 +138,13 @@ fn check_update(url: impl AsRef<str>) -> Result<Update> {
 }
 
 fn ota_update(url: impl AsRef<str>) -> Result<()> {
-
     let mut client = connect()?;
     let request = client.get(url.as_ref())?;
     let response = request.submit()?;
     let status = response.status();
     let mut ota = esp_ota::OtaUpdate::begin()?;
+
+    info!("Begin OTA");
 
     match status {
         200..=299 => {
@@ -154,6 +156,7 @@ fn ota_update(url: impl AsRef<str>) -> Result<()> {
                     break;
                 }
                 ota.write(&buf)?;
+                info!("Wrote {} bytes", size);
             }
         }
 
@@ -162,7 +165,6 @@ fn ota_update(url: impl AsRef<str>) -> Result<()> {
 
     let mut completed_ota = ota.finalize()?;
     completed_ota.set_as_boot_partition()?;
+    info!("OTA Complete");
     completed_ota.restart();
-
-    Ok(())
 }
