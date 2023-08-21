@@ -71,14 +71,16 @@ fn main() -> Result<()> {
 
     let run_thread = thread::spawn(move || run());
 
-    ota()?;
+    let link = ota()?;
+    
+    ota_update(link)?;
 
     let _ = run_thread.join();
 
     Ok(())
 }
 
-fn ota() -> Result<()> {
+fn ota() -> Result<String> {
     let update = check_update(
         "https://raw.githubusercontent.com/Mirkopoj/ESP-OTA-Template/master/update.json",
     )?;
@@ -97,9 +99,7 @@ fn ota() -> Result<()> {
         }
     }
 
-    ota_update(update.link)?;
-
-    Ok(())
+    Ok(update.link)
 }
 
 fn connect() -> Result<Client<EspHttpConnection>> {
